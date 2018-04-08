@@ -117,6 +117,8 @@ public class WindowedWordCount {
                                     .nextLong(minTimestamp.getMillis(), maxTimestamp.getMillis())
                     );
             c.outputWithTimestamp(c.element(), new Instant(randomTimestamp));
+            System.out.print("test git");
+
         }
     }
 }
