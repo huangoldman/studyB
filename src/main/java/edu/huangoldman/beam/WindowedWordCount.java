@@ -4,6 +4,7 @@ import edu.huangoldman.common.ExampleBigQueryTableOptions;
 import edu.huangoldman.common.ExampleOptions;
 import edu.huangoldman.common.WriteOneFilePerWindow;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.*;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -19,7 +20,7 @@ import org.joda.time.Instant;
 import java.io.IOException;
 import java.util.concurrent.ThreadLocalRandom;
 
-
+//test
 public class WindowedWordCount {
     static final int WINDOW_SIZE = 10;
 
@@ -48,14 +49,21 @@ public class WindowedWordCount {
 
         wordCounts
                 .apply(MapElements.via(new WordCount.FormatAsTextFn()))
-                .apply(new WriteOneFilePerWindow(null, null));
+                .apply(new WriteOneFilePerWindow(output, options.getNumShards()));
 
+        PipelineResult result = pipeline.run();
 
+        try {
+            result.waitUntilFinish();
+        } catch (Exception exc) {
+            result.cancel();
+        }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Options options = PipelineOptionsFactory.fromArgs(args).withValidation().as(Options.class);
 
+        runWindowedWordCount(options);
     }
 
     public interface Options extends WordCount.WordCountOptions, ExampleOptions,
@@ -74,11 +82,13 @@ public class WindowedWordCount {
         void setMinTimestampMillis(Long value);
 
         @Description("最大随机分配时间戳，以毫秒位单位")
+        @Default.InstanceFactory(DefaultToMinTimestampPlusOneHour.class)
         Long getMaxTimestampMillis();
 
         void setMaxTimestampMillis(Long value);
 
         @Description("每个窗口生成的固定的数量")
+        @Default.Integer(5)
         Integer getNumShards();
 
         void setNumShards(Integer numShards);
